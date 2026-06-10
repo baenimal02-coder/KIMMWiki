@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>커스텀 위키</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* 나무위키 스타일 기본 CSS */
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; background-color: #efefef; color: #373a3c; }
+        header { background-color: #00a495; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; font-size: 1.5rem; cursor: pointer; }
+        .search-bar { padding: 5px; width: 200px; }
+        .container { max-width: 1000px; margin: 20px auto; background: white; padding: 30px; border: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .doc-title { font-size: 2.5rem; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .btn-group button { background: white; border: 1px solid #ccc; padding: 5px 15px; cursor: pointer; font-size: 0.9rem; margin-left: 5px; }
+        .btn-group button:hover { background: #f8f9fa; }
+        .content { line-height: 1.6; font-size: 1.05rem; min-height: 300px; }
+        textarea { width: 100%; height: 400px; padding: 10px; font-family: monospace; font-size: 1rem; border: 1px solid #ccc; box-sizing: border-box; resize: vertical; }
+        .hidden { display: none; }
+        a { color: #0275d8; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="loadDocument('대문')">내장 위키</h1>
+        <div>
+            <input type="text" id="searchInput" class="search-bar" placeholder="문서 검색..." onkeypress="if(event.key === 'Enter') searchDoc()">
+            <button onclick="searchDoc()">이동</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="doc-title">
+            <span id="titleDisplay">대문</span>
+            <div class="btn-group">
+                <button id="readBtn" class="hidden" onclick="toggleMode('read')">읽기</button>
+                <button id="editBtn" onclick="toggleMode('edit')">편집</button>
+            </div>
+        </div>
+
+        <div id="contentView" class="content">로딩 중...</div>
+
+        <div id="editView" class="hidden">
+            <textarea id="editorInput" placeholder="마크다운 문법으로 내용을 작성하세요."></textarea>
+            <div style="text-align: right; margin-top: 10px;">
+                <button onclick="saveDocument()" style="padding: 10px 20px; background: #00a495; color: white; border: none; cursor: pointer;">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // 팩트: Firebase 콘솔에서 프로젝트 생성 후 아래 정보를 교체해야 DB 연동이 완료됩니다.
+        const firebaseConfig = {
+            apiKey: "본인의_API_KEY",
+            authDomain: "본인의_PROJECT_ID.firebaseapp.com",
+            projectId: "본인의_PROJECT_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        let currentDocName = '대문';
+
+        // 문서 불러오기 함수
+        window.loadDocument = async function(docName) {
+            currentDocName = docName;
+            document.getElementById('titleDisplay').innerText = docName;
+            toggleMode('read');
+            document.getElementById('contentView').innerHTML = "데이터를 불러오는 중...";
+
+            try {
+                const docRef = doc(db, "wikiDocs", docName);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const rawText = docSnap.data().content;
+                    document.getElementById('editorInput').value = rawText;
+                    document.getElementById('contentView').innerHTML = marked.parse(rawText);
+                } else {
+                    document.getElementById('editorInput').value = "";
+                    document.getElementById('contentView').innerHTML = "<p>해당 문서가 없습니다. 우측 상단의 <b>[편집]</b> 버튼을 눌러 새 문서를 작성하세요.</p>";
+                }
+            } catch (error) {
+                console.error("문서 로드 실패:", error);
+                document.getElementById('contentView').innerHTML = "데이터베이스 연결을 확인하세요.";
+            }
+            
+            // URL 해시 업데이트
+            window.location.hash = encodeURIComponent(docName);
+        };
+
+        // 문서 저장 함수
+        window.saveDocument = async function() {
+            const newContent = document.getElementById('editorInput').value;
+            try {
+                await setDoc(doc(db, "wikiDocs", currentDocName), {
+                    content: newContent,
+                    lastModified: new Date()
+                });
+                alert("저장되었습니다.");
+                loadDocument(currentDocName);
+            } catch (error) {
+                console.error("저장 실패:", error);
+                alert("저장 중 오류가 발생했습니다. 권한 설정을 확인하세요.");
+            }
+        };
+
+        // 초기 로드 시 URL 해시 확인
+        window.onload = () => {
+            const hash = decodeURIComponent(window.location.hash.substring(1));
+            if(hash) { loadDocument(hash); } 
+            else { loadDocument('대문'); }
+        };
+    </script>
+
+    <script>
+        function toggleMode(mode) {
+            if (mode === 'edit') {
+                document.getElementById('contentView').classList.add('hidden');
+                document.getElementById('editView').classList.remove('hidden');
+                document.getElementById('editBtn').classList.add('hidden');
+                document.getElementById('readBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('editView').classList.add('hidden');
+                document.getElementById('contentView').classList.remove('hidden');
+                document.getElementById('readBtn').classList.add('hidden');
+                document.getElementById('editBtn').classList.remove('hidden');
+            }
+        }
+
+        function searchDoc() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query) { loadDocument(query); }
+        }
+    </script>
+</body>
+</html>
