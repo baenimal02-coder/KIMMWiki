@@ -56,10 +56,14 @@
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // 팩트: Firebase 콘솔에서 프로젝트 생성 후 아래 정보를 교체해야 DB 연동이 완료됩니다.
-        const firebaseConfig = {
-            apiKey: "본인의_API_KEY",
-            authDomain: "본인의_PROJECT_ID.firebaseapp.com",
-            projectId: "본인의_PROJECT_ID"
+const firebaseConfig = {
+            apiKey: "AIzaSyBjqzM3ScDSoINSMiCukjFG6z7MBjinI1M",
+            authDomain: "nextgenband.firebaseapp.com",
+            projectId: "nextgenband",
+            storageBucket: "nextgenband.firebasestorage.app",
+            messagingSenderId: "251453757830",
+            appId: "1:251453757830:web:201c7945ef0eba901db407",
+            measurementId: "G-WV1SK3R50G"
         };
 
         const app = initializeApp(firebaseConfig);
