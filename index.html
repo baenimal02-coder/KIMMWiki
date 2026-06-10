@@ -25,7 +25,7 @@
 <body>
 
     <header>
-        <h1 onclick="loadDocument('대문')">KIMM 위키</h1>
+        <h1 onclick="loadDocument('KIMM 위키')">KIMM 위키</h1>
         <div>
             <input type="text" id="searchInput" class="search-bar" placeholder="문서 검색..." onkeypress="if(event.key === 'Enter') searchDoc()">
             <button onclick="searchDoc()">이동</button>
@@ -34,7 +34,7 @@
 
     <div class="container">
         <div class="doc-title">
-            <span id="titleDisplay">대문</span>
+            <span id="titleDisplay">KIMM 위키</span>
             <div class="btn-group">
                 <button id="readBtn" class="hidden" onclick="toggleMode('read')">읽기</button>
                 <button id="editBtn" onclick="toggleMode('edit')">편집</button>
@@ -69,7 +69,7 @@ const firebaseConfig = {
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        let currentDocName = '대문';
+        let currentDocName = 'KIMM 위키';
 
         // 문서 불러오기 함수
         window.loadDocument = async function(docName) {
@@ -119,7 +119,7 @@ const firebaseConfig = {
         window.onload = () => {
             const hash = decodeURIComponent(window.location.hash.substring(1));
             if(hash) { loadDocument(hash); } 
-            else { loadDocument('대문'); }
+            else { loadDocument('KIMM 위키'); }
         };
     </script>
 
